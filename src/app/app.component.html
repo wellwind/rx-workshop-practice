@@ -3,6 +3,46 @@
 </mat-toolbar>
 <mat-sidenav-container>
   <mat-sidenav-content>
-    <mat-checkbox>Demo</mat-checkbox>
+    <form [formGroup]="registerForm">
+      <section>
+        <mat-form-field>
+          <input matInput placeholder="姓名" formControlName="name" required>
+        </mat-form-field>
+      </section>
+
+      <section>
+        <h5>訂閱電子報</h5>
+        <div formGroupName="subscription">
+          <mat-checkbox [checked]="checkAll" [indeterminate]="indeterminateSubscription" (change)="subscribeAllChange($event)">全部</mat-checkbox>
+          <mat-checkbox *ngFor="let sub of newsletterList" [formControlName]="sub.id">
+            {{ sub.name }}
+          </mat-checkbox>
+        </div>
+      </section>
+
+      <section>
+        <h3>郵遞區號</h3>
+        <mat-form-field>
+          <mat-select placeholder="縣市" formControlName="city">
+            <mat-option *ngFor="let city of regions$ | async as regions" [value]="city">
+              {{ city.CityName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-select placeholder="區域" formControlName="area">
+            <mat-option *ngFor="let area of this.registerForm.get('city').value?.AreaList" [value]="area">
+              {{ area.AreaName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field>
+          <input matInput placeholder="郵遞區號" [value]="registerForm.get('area')?.value?.ZipCode" disabled="true">
+        </mat-form-field>
+      </section>
+      <div>
+        <button mat-raised-button color="primary" (click)="submit()">送出</button>
+      </div>
+    </form>
   </mat-sidenav-content>
 </mat-sidenav-container>
