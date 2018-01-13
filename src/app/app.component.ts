@@ -62,7 +62,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .get('subscription')
       .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory))
       .subscribe(subscription => {
-        this.registerForm.get('subscribeAll').reset(this.checkAll, { emitEvent: false });
+        this.registerForm.get('subscribeAll').setValue(this.checkAll, { emitEvent: false });
       });
   }
 
