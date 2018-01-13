@@ -24,14 +24,14 @@
         <h3>郵遞區號</h3>
         <mat-form-field>
           <mat-select placeholder="縣市" formControlName="city">
-            <mat-option *ngFor="let city of regions$ | async as regions" [value]="city">
+            <mat-option *ngFor="let city of regions$ | async" [value]="city">
               {{ city.CityName }}
             </mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field>
           <mat-select placeholder="區域" formControlName="area">
-            <mat-option *ngFor="let area of this.registerForm.get('city').value?.AreaList" [value]="area">
+            <mat-option *ngFor="let area of registerForm.get('city').value?.AreaList" [value]="area">
               {{ area.AreaName }}
             </mat-option>
           </mat-select>
