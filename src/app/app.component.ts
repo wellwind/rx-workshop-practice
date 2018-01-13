@@ -3,7 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatCheckboxChange } from '@angular/material';
 import { Observable } from 'rxjs/Observable';
-import { tap, map, takeUntil } from 'rxjs/operators';
+import { tap, map, filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/Subject';
 
 @Component({
@@ -28,7 +28,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(private httpClient: HttpClient) {
     this.registerForm = new FormGroup({
-      name: new FormControl('', Validators.required),
+      name: new FormControl(),
       subscribeAll: new FormControl(),
       subscription: new FormGroup({
         subscribeRxWorkshop: new FormControl(),
@@ -52,20 +52,35 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.registerForm
       .get('subscription')
-      .valueChanges.pipe(tap(value => console.log(value)), map(value => this._getSubscriptionCount()), takeUntil(this.destory$))
-      .subscribe(subscriptionCount => {
-        const checkAll = subscriptionCount === this.newsletterList.length;
-        this.indeterminateSubscription = subscriptionCount !== 0 && subscriptionCount !== this.newsletterList.length;
-        this.registerForm.get('subscribeAll').setValue(checkAll, { emitEvent: false });
-      });
+      .valueChanges.pipe(
+        tap(value => console.log(value)),
+        map(value => this._getSubscriptionCount()),
+        tap(subscriptionCount => {
+          const checkAll = subscriptionCount === this.newsletterList.length;
+          this.indeterminateSubscription = subscriptionCount !== 0 && subscriptionCount !== this.newsletterList.length;
+          this.registerForm.get('subscribeAll').setValue(checkAll, { emitEvent: false });
+        }),
+        map(subscriptionCount => {
+          return subscriptionCount >= 2;
+        }),
+        tap(mustName => {
+          this.registerForm.get('name').clearValidators();
+          if (mustName) {
+            this.registerForm.get('name').setValidators(Validators.required);
+          }
+          this.registerForm.get('name').updateValueAndValidity();
+        }),
+        takeUntil(this.destory$)
+      )
+      .subscribe();
 
     this.registerForm.reset({
       subscription: {
-        subscribeRxWorkshop: true,
-        subscribeAngularMaterial: true,
-        subscribeAngularTutorial: true
+        subscribeRxWorkshop: true
       }
     });
+
+    this.registerForm.get('name').setValidators(Validators.required);
   }
 
   ngOnDestroy() {
@@ -85,6 +100,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   submit() {
+    console.log(this.registerForm.get('name').valid);
     console.log(this.registerForm.value);
   }
 }
