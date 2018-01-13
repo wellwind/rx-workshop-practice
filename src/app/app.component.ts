@@ -3,7 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatCheckboxChange } from '@angular/material';
 import { Observable } from 'rxjs/Observable';
-import { tap, takeUntil } from 'rxjs/operators';
+import { tap, map, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/Subject';
 
 @Component({
@@ -12,9 +12,9 @@ import { Subject } from 'rxjs/Subject';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
-  destory = new Subject();
   registerForm: FormGroup;
 
+  destory$ = new Subject();
   regions$: Observable<any>;
 
   newsletterList = [
@@ -24,25 +24,17 @@ export class AppComponent implements OnInit, OnDestroy {
     { id: 'subscribeAngularMaster', name: 'Angular大師養成班' }
   ];
 
-  get checkAll() {
-    const subscriptionCount = this._getSubscriptionCount();
-    return subscriptionCount === this.newsletterList.length;
-  }
-
-  get indeterminateSubscription() {
-    const subscriptionCount = this._getSubscriptionCount();
-    return subscriptionCount !== 0 && subscriptionCount !== this.newsletterList.length;
-  }
+  indeterminateSubscription = false;
 
   constructor(private httpClient: HttpClient) {
     this.registerForm = new FormGroup({
       name: new FormControl('', Validators.required),
       subscribeAll: new FormControl(),
       subscription: new FormGroup({
-        subscribeRxWorkshop: new FormControl(true),
-        subscribeAngularMaterial: new FormControl(true),
-        subscribeAngularTutorial: new FormControl(true),
-        subscribeAngularMaster: new FormControl(false)
+        subscribeRxWorkshop: new FormControl(),
+        subscribeAngularMaterial: new FormControl(),
+        subscribeAngularTutorial: new FormControl(),
+        subscribeAngularMaster: new FormControl()
       }),
       city: new FormControl(),
       area: new FormControl()
@@ -53,28 +45,29 @@ export class AppComponent implements OnInit, OnDestroy {
     this.regions$ = this.httpClient.get<any>('/assets/region.json');
     this.registerForm
       .get('subscribeAll')
-      .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory))
+      .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory$))
       .subscribe(value => {
         this.subscribeAllChange(value);
       });
 
     this.registerForm
       .get('subscription')
-      .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory))
-      .subscribe(subscription => {
-        this.registerForm.get('subscribeAll').setValue(this.checkAll, { emitEvent: false });
+      .valueChanges.pipe(tap(value => console.log(value)), map(value => this._getSubscriptionCount()), takeUntil(this.destory$))
+      .subscribe(subscriptionCount => {
+        const checkAll = subscriptionCount === this.newsletterList.length;
+        this.indeterminateSubscription = subscriptionCount !== 0 && subscriptionCount !== this.newsletterList.length;
+        this.registerForm.get('subscribeAll').setValue(checkAll, { emitEvent: false });
       });
   }
 
   ngOnDestroy() {
-    this.destory.next();
-    this.destory.complete();
+    this.destory$.next();
+    this.destory$.complete();
   }
 
   private _getSubscriptionCount() {
     const subCtrls = (this.registerForm.controls.subscription as FormGroup).controls;
-    return Object.keys(subCtrls)
-      .filter(key => subCtrls[key].value).length;
+    return Object.keys(subCtrls).filter(key => subCtrls[key].value).length;
   }
 
   subscribeAllChange(checked: boolean) {
