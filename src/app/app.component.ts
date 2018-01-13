@@ -1,15 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatCheckboxChange } from '@angular/material';
 import { Observable } from 'rxjs/Observable';
+import { tap, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs/Subject';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
+  destory = new Subject();
   registerForm: FormGroup;
 
   regions$: Observable<any>;
@@ -34,6 +37,7 @@ export class AppComponent implements OnInit {
   constructor(private httpClient: HttpClient) {
     this.registerForm = new FormGroup({
       name: new FormControl('', Validators.required),
+      checkAll: new FormControl(),
       subscription: new FormGroup({
         subscribeRxWorkshop: new FormControl(true),
         subscribeAngularMaterial: new FormControl(true),
@@ -47,20 +51,35 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.regions$ = this.httpClient.get<any>('/assets/region.json');
+    this.registerForm
+      .get('checkAll')
+      .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory))
+      .subscribe(value => {
+        this.subscribeAllChange(value);
+      });
+
+    this.registerForm
+      .get('subscription')
+      .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory))
+      .subscribe(subscription => {
+        this.registerForm.get('checkAll').reset(this.checkAll, { emitEvent: false });
+      });
+  }
+
+  ngOnDestroy() {
+    this.destory.next();
+    this.destory.complete();
   }
 
   private _getSubscriptionCount() {
-    let subscriptionCount = 0;
-    const subscriptionControls = (this.registerForm.controls.subscription as FormGroup).controls;
-    Object.keys(subscriptionControls).forEach(contorlKey => {
-      subscriptionCount += subscriptionControls[contorlKey].value ? 1 : 0;
-    });
-    return subscriptionCount;
+    const subCtrls = (this.registerForm.controls.subscription as FormGroup).controls;
+    return Object.keys(subCtrls)
+      .filter(key => subCtrls[key].value).length;
   }
 
-  subscribeAllChange($event: MatCheckboxChange) {
+  subscribeAllChange(checked: boolean) {
     this.newsletterList.forEach(newsletter => {
-      this.registerForm.get(`subscription.${newsletter.id}`).setValue($event.checked);
+      this.registerForm.get(`subscription.${newsletter.id}`).setValue(checked);
     });
   }
 
