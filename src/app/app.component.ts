@@ -37,7 +37,7 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(private httpClient: HttpClient) {
     this.registerForm = new FormGroup({
       name: new FormControl('', Validators.required),
-      checkAll: new FormControl(),
+      subscribeAll: new FormControl(),
       subscription: new FormGroup({
         subscribeRxWorkshop: new FormControl(true),
         subscribeAngularMaterial: new FormControl(true),
@@ -52,7 +52,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.regions$ = this.httpClient.get<any>('/assets/region.json');
     this.registerForm
-      .get('checkAll')
+      .get('subscribeAll')
       .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory))
       .subscribe(value => {
         this.subscribeAllChange(value);
@@ -62,7 +62,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .get('subscription')
       .valueChanges.pipe(tap(value => console.log(value)), takeUntil(this.destory))
       .subscribe(subscription => {
-        this.registerForm.get('checkAll').reset(this.checkAll, { emitEvent: false });
+        this.registerForm.get('subscribeAll').reset(this.checkAll, { emitEvent: false });
       });
   }
 
