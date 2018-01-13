@@ -3,8 +3,9 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatCheckboxChange } from '@angular/material';
 import { Observable } from 'rxjs/Observable';
-import { tap, map, filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/Subject';
+import { tap, map, filter, takeUntil } from 'rxjs/operators';
+import { of } from 'rxjs/observable/of';
 
 @Component({
   selector: 'app-root',
@@ -54,8 +55,9 @@ export class AppComponent implements OnInit, OnDestroy {
       .get('subscription')
       .valueChanges.pipe(
         tap(value => console.log(value)),
-        map(value => this._getSubscriptionCount()),
+        this._countTrue,
         tap(subscriptionCount => {
+          console.log(subscriptionCount);
           const checkAll = subscriptionCount === this.newsletterList.length;
           this.indeterminateSubscription = subscriptionCount !== 0 && subscriptionCount !== this.newsletterList.length;
           this.registerForm.get('subscribeAll').setValue(checkAll, { emitEvent: false });
@@ -88,9 +90,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.destory$.complete();
   }
 
-  private _getSubscriptionCount() {
-    const subCtrls = (this.registerForm.controls.subscription as FormGroup).controls;
-    return Object.keys(subCtrls).filter(key => subCtrls[key].value).length;
+  private _countTrue(source: Observable<any>): Observable<number> {
+    return source.pipe(
+      map(data =>  Object.keys(data).filter(key => data[key]).length)
+    );
   }
 
   subscribeAllChange(checked: boolean) {
