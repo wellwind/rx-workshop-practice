@@ -58,6 +58,14 @@ export class AppComponent implements OnInit, OnDestroy {
         this.indeterminateSubscription = subscriptionCount !== 0 && subscriptionCount !== this.newsletterList.length;
         this.registerForm.get('subscribeAll').setValue(checkAll, { emitEvent: false });
       });
+
+    this.registerForm.reset({
+      subscription: {
+        subscribeRxWorkshop: true,
+        subscribeAngularMaterial: true,
+        subscribeAngularTutorial: true
+      }
+    });
   }
 
   ngOnDestroy() {
